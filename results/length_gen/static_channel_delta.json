@@ -1,0 +1,27 @@
+{
+  "name": "static_channel_delta",
+  "attention_type": "static_channel_delta",
+  "train_seq_len": 2048,
+  "no_pos_emb": true,
+  "dataset": "wikitext",
+  "eval_results": [
+    {
+      "seq_len": 2048,
+      "val_loss": 5.0901,
+      "perplexity": 162.41,
+      "n_samples": 120
+    },
+    {
+      "seq_len": 4096,
+      "val_loss": 5.0872,
+      "perplexity": 161.93,
+      "n_samples": 60
+    },
+    {
+      "seq_len": 8192,
+      "val_loss": 5.086,
+      "perplexity": 161.73,
+      "n_samples": 30
+    }
+  ]
+}

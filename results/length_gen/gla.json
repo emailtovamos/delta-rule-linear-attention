@@ -1,0 +1,27 @@
+{
+  "name": "gla",
+  "attention_type": "gla",
+  "train_seq_len": 2048,
+  "no_pos_emb": true,
+  "dataset": "wikitext",
+  "eval_results": [
+    {
+      "seq_len": 2048,
+      "val_loss": 5.1569,
+      "perplexity": 173.62,
+      "n_samples": 120
+    },
+    {
+      "seq_len": 4096,
+      "val_loss": 5.1544,
+      "perplexity": 173.19,
+      "n_samples": 60
+    },
+    {
+      "seq_len": 8192,
+      "val_loss": 5.1533,
+      "perplexity": 173.01,
+      "n_samples": 30
+    }
+  ]
+}

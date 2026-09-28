@@ -1,0 +1,32 @@
+{
+  "gla": {
+    "val_loss": 2.4228,
+    "train_time_s": 1920,
+    "status": "success"
+  },
+  "deltanet": {
+    "val_loss": 2.3465,
+    "train_time_s": 7800,
+    "status": "success"
+  },
+  "kda": {
+    "val_loss": 2.3079,
+    "train_time_s": 3081,
+    "status": "success"
+  },
+  "standard": {
+    "val_loss": 2.3849,
+    "train_time_s": 450,
+    "status": "success"
+  },
+  "static_channel": {
+    "val_loss": 2.5423,
+    "train_time_s": 10030,
+    "status": "success"
+  },
+  "static_channel_delta": {
+    "val_loss": 2.2429,
+    "train_time_s": 12908,
+    "status": "success"
+  }
+}

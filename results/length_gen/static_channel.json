@@ -1,0 +1,27 @@
+{
+  "name": "static_channel",
+  "attention_type": "static_channel",
+  "train_seq_len": 2048,
+  "no_pos_emb": true,
+  "dataset": "wikitext",
+  "eval_results": [
+    {
+      "seq_len": 2048,
+      "val_loss": 5.318,
+      "perplexity": 203.98,
+      "n_samples": 120
+    },
+    {
+      "seq_len": 4096,
+      "val_loss": 5.3149,
+      "perplexity": 203.35,
+      "n_samples": 60
+    },
+    {
+      "seq_len": 8192,
+      "val_loss": 5.3136,
+      "perplexity": 203.09,
+      "n_samples": 30
+    }
+  ]
+}

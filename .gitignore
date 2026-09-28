@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# ML checkpoints (per-run training logs are tracked; model weights are not)
+*.pt
+*.pth
+
+# macOS / logs
+.DS_Store
+screenlog.*
+*.log

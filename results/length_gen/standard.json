@@ -1,0 +1,27 @@
+{
+  "name": "standard",
+  "attention_type": "standard",
+  "train_seq_len": 2048,
+  "no_pos_emb": true,
+  "dataset": "wikitext",
+  "eval_results": [
+    {
+      "seq_len": 2048,
+      "val_loss": 5.5933,
+      "perplexity": 268.62,
+      "n_samples": 120
+    },
+    {
+      "seq_len": 4096,
+      "val_loss": 5.6222,
+      "perplexity": 276.49,
+      "n_samples": 60
+    },
+    {
+      "seq_len": 8192,
+      "val_loss": 5.6611,
+      "perplexity": 287.47,
+      "n_samples": 30
+    }
+  ]
+}

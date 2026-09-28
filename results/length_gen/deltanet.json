@@ -1,0 +1,27 @@
+{
+  "name": "deltanet",
+  "attention_type": "deltanet",
+  "train_seq_len": 2048,
+  "no_pos_emb": true,
+  "dataset": "wikitext",
+  "eval_results": [
+    {
+      "seq_len": 2048,
+      "val_loss": 5.1534,
+      "perplexity": 173.03,
+      "n_samples": 120
+    },
+    {
+      "seq_len": 4096,
+      "val_loss": 5.1508,
+      "perplexity": 172.56,
+      "n_samples": 60
+    },
+    {
+      "seq_len": 8192,
+      "val_loss": 5.1496,
+      "perplexity": 172.37,
+      "n_samples": 30
+    }
+  ]
+}

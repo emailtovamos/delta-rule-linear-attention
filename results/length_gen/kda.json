@@ -1,0 +1,27 @@
+{
+  "name": "kda",
+  "attention_type": "kda",
+  "train_seq_len": 2048,
+  "no_pos_emb": true,
+  "dataset": "wikitext",
+  "eval_results": [
+    {
+      "seq_len": 2048,
+      "val_loss": 5.0985,
+      "perplexity": 163.78,
+      "n_samples": 120
+    },
+    {
+      "seq_len": 4096,
+      "val_loss": 5.0956,
+      "perplexity": 163.3,
+      "n_samples": 60
+    },
+    {
+      "seq_len": 8192,
+      "val_loss": 5.0944,
+      "perplexity": 163.11,
+      "n_samples": 30
+    }
+  ]
+}
