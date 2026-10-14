@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Delta-Rule Writes in Linear Attention — presentation</title>
+<style>
+  :root{ --ink:#1a1a1a; --sub:#666; --accent:#8a2332; --rule:#ddd; --bg:#ffffff; }
+  *{box-sizing:border-box; margin:0; padding:0}
+  html,body{height:100%}
+  body{background:var(--bg); color:var(--ink);
+       font-family:"Helvetica Neue",-apple-system,Helvetica,Arial,sans-serif; overflow:hidden}
+  .mono{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace}
+  .deck{position:relative; height:100vh}
+  .slide{position:absolute; inset:0; display:none; flex-direction:column; padding:64px 96px 70px; background:var(--bg)}
+  .slide.on{display:flex}
+  h1{font-size:44px; font-weight:700; line-height:1.18}
+  h2{font-size:33px; font-weight:700; padding-bottom:12px; border-bottom:2px solid var(--rule); margin-bottom:26px}
+  p,li{font-size:20px; line-height:1.5}
+  .sub{color:var(--sub)} .acc{color:var(--accent)} .small{font-size:15.5px}
+  .eq{font-family:"SF Mono",ui-monospace,Menlo,monospace; font-size:23px; text-align:center; margin:14px 0 4px; letter-spacing:-0.2px}
+  .gl{font-size:15px; color:var(--sub); text-align:center; margin-bottom:10px}
+  .cols{display:flex; gap:48px; flex:1; min-height:0; align-items:flex-start}
+  .col{flex:1; min-width:0}
+  .figwrap{text-align:center}
+  .figwrap img{max-width:100%; object-fit:contain}
+  .figcap{font-size:15px; color:var(--sub); margin-top:8px; text-align:center}
+  ul{list-style:none} ul li{padding-left:20px; position:relative; margin-bottom:12px}
+  ul li::before{content:"–"; position:absolute; left:0; color:var(--accent); font-weight:700}
+  table{border-collapse:collapse; margin:0 auto}
+  th,td{padding:6px 16px; font-size:18px; text-align:center; border-bottom:1px solid var(--rule)}
+  th{font-size:13px; letter-spacing:1px; text-transform:uppercase; color:var(--sub)}
+  .footer{position:fixed; left:0; right:0; bottom:0; display:flex; justify-content:space-between;
+          padding:10px 24px; font-size:12px; color:#999; pointer-events:none}
+  .navbtns{position:fixed; right:14px; bottom:32px; display:flex; gap:6px}
+  .navbtns button{background:#fff; color:var(--ink); border:1px solid var(--rule); border-radius:6px;
+                  width:38px; height:32px; font-size:16px; cursor:pointer}
+  .pagenum{display:none; position:absolute; right:30px; bottom:18px; font-size:12.5px; color:#999}
+  .divider{border-top:2px solid var(--rule); margin:16px 0}
+  @page{size:1600px 900px; margin:0}
+  @media print{
+    body{overflow:visible}
+    .slide{display:flex !important; position:relative; width:1600px; height:900px; page-break-after:always; overflow:hidden}
+    .footer,.navbtns{display:none}
+    .pagenum{display:block}
+  }
+  .math.disp{text-align:center; margin:14px 0 2px; font-size:25px}
+  .gl{margin-bottom:12px}
+  .step{font-size:13.5px; letter-spacing:2px; text-transform:uppercase; color:var(--accent); font-weight:700; text-align:left; margin-top:2px}
+  .math.disp .katex-display{margin:6px 0}
+  .gl{margin-bottom:8px !important}
+  /* pipeline slide */
+  .flow{display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:nowrap}
+  .pbox{border:1.5px solid #bbb; border-radius:8px; padding:12px 14px; text-align:center; background:#fff}
+  .pbox .t{font-size:16.5px; font-weight:600}
+  .pbox .s{font-size:13px; color:var(--sub); margin-top:4px}
+  .farr{font-size:20px; color:#999}
+  .fgroup{border:1.5px dashed var(--accent); border-radius:10px; padding:20px 14px 12px; position:relative}
+  .fgroup .glabel{position:absolute; top:-11px; left:14px; background:var(--bg); padding:0 8px; font-size:13.5px; color:var(--accent); font-weight:600}
+</style>
+<link rel="stylesheet" href="katex/katex.min.css">
+<script src="katex/katex.min.js"></script>
+</head>
+<body>
+<div class="deck">
+
+<!-- 1 · TITLE -->
+<section class="slide">
+  <div style="flex:1; display:flex; flex-direction:column; justify-content:center">
+    <p class="small sub" style="letter-spacing:2px; text-transform:uppercase">Transactions on Machine Learning Research · 09/2026</p>
+    <h1 style="margin:18px 0 22px; max-width:1250px">Delta-Rule Writes in Linear Attention:<br>A Controlled Factorial Study of Decay Design</h1>
+    <p style="font-size:22px">Satyajit Das</p>
+    <p class="sub" style="margin-top:6px">Independent Researcher · openreview.net/forum?id=FdXB4u27LD</p>
+    <div class="divider" style="max-width:420px; margin:36px 0 18px"></div>
+    <p style="font-size:21px">How should a transformer <span class="acc"><b>forget</b></span>?</p>
+  </div>
+</section>
+
+<!-- 1b · WHERE o_t LIVES -->
+<section class="slide">
+  <h2>The whole model, end to end — 18M config, all 6 layers</h2>
+  <div style="flex:1; display:flex; flex-direction:column; justify-content:center">
+    <div class="flow" style="gap:9px">
+      <div class="pbox" style="padding:10px 12px"><div class="t" style="font-size:14px">"the cat sat on the ___"</div><div class="s" style="font-size:11.5px">tokenizer → ids</div></div>
+      <div class="farr" style="font-size:14px">→</div>
+      <div class="pbox" style="padding:10px 12px"><div class="t" style="font-size:14px">embedding + position</div><div class="s" style="font-size:11.5px"><span data-tex='x_t \in \mathbb{R}^{256}'></span> · one per word</div></div>
+      <div class="farr" style="font-size:14px">→</div>
+      <div class="pbox" style="padding:10px 12px;"><div class="t" style="font-size:14.5px;">layer 1</div><div class="s" style="font-size:11.5px">attn · MLP</div></div><div class="farr" style="font-size:14px">→</div><div class="pbox" style="padding:10px 12px;"><div class="t" style="font-size:14.5px;">layer 2</div><div class="s" style="font-size:11.5px">attn · MLP</div></div><div class="farr" style="font-size:14px">→</div><div class="pbox" style="padding:10px 12px;border:2.5px solid var(--accent);"><div class="t" style="font-size:14.5px;color:var(--accent);">layer 3</div><div class="s" style="font-size:11.5px">attn · MLP</div></div><div class="farr" style="font-size:14px">→</div><div class="pbox" style="padding:10px 12px;"><div class="t" style="font-size:14.5px;">layer 4</div><div class="s" style="font-size:11.5px">attn · MLP</div></div><div class="farr" style="font-size:14px">→</div><div class="pbox" style="padding:10px 12px;"><div class="t" style="font-size:14.5px;">layer 5</div><div class="s" style="font-size:11.5px">attn · MLP</div></div><div class="farr" style="font-size:14px">→</div><div class="pbox" style="padding:10px 12px;"><div class="t" style="font-size:14.5px;">layer 6</div><div class="s" style="font-size:11.5px">attn · MLP</div></div>
+      <div class="farr" style="font-size:14px">→</div>
+      <div class="pbox" style="padding:10px 12px"><div class="t" style="font-size:14px">final norm</div></div>
+      <div class="farr" style="font-size:14px">→</div>
+      <div class="pbox" style="padding:10px 12px"><div class="t" style="font-size:14px">LM head</div></div>
+      <div class="farr" style="font-size:14px">→</div>
+      <div class="pbox" style="padding:10px 12px"><div class="t" style="font-size:14px">logits → softmax</div><div class="s" style="font-size:11.5px">p(next) → "mat"</div></div>
+    </div>
+    <div style="text-align:center; color:var(--accent); font-size:15px; margin:14px 0 2px">⌄&nbsp; layer 3, opened — every layer is identical &nbsp;⌄</div>
+    <div class="fgroup" style="margin:6px auto 0; padding:16px 22px">
+      <div class="flow" style="gap:12px">
+        <div class="pbox" style="border:2.5px solid var(--accent)">
+          <div class="t" style="color:var(--accent)">attention</div>
+          <div class="flow" style="gap:7px; margin-top:7px">
+            <div class="pbox" style="padding:7px 10px"><div class="t" style="font-size:13px">head 1</div><div class="s" style="font-size:11px">d = 64</div></div>
+            <div class="pbox" style="padding:7px 10px"><div class="t" style="font-size:13px">head 2</div><div class="s" style="font-size:11px">d = 64</div></div>
+            <div class="pbox" style="padding:7px 10px"><div class="t" style="font-size:13px">head 3</div><div class="s" style="font-size:11px">d = 64</div></div>
+            <div class="pbox" style="padding:7px 10px"><div class="t" style="font-size:13px">head 4</div><div class="s" style="font-size:11px">d = 64</div></div>
+          </div>
+          <div class="s" style="font-size:12px; margin-top:7px">concat · 4 × 64 = 256</div>
+        </div>
+        <div class="farr" style="color:var(--accent); font-weight:700">→ o<sub>t</sub> →</div>
+        <div class="pbox"><div class="t">MLP</div><div class="s">per-token</div></div>
+      </div>
+      <div class="s" style="font-size:12.5px; color:var(--sub); margin-top:9px; text-align:center">each sublayer wrapped in residual add + norm · then the token moves to layer 4</div>
+    </div>
+    <p class="gl" style="margin-top:26px; font-size:15.5px"><span class="acc"><b>o<sub>t</sub></b></span> = the attention sublayer's output at position t — one o<sub>t</sub> per token, per layer, heads concatenated back to <span data-tex='\mathbb{R}^{256}'></span>. &nbsp;@125M: 12 layers · 12 heads · D = 768, same wiring. &nbsp;This paper changes <b>only the attention box</b>.</p>
+  </div>
+</section>
+
+<!-- 2 · SOFTMAX → LINEAR -->
+<section class="slide">
+  <h2>From softmax to linear attention</h2>
+  <div style="flex:1; display:flex; flex-direction:column; justify-content:center; max-width:1340px; margin:0 auto">
+    <p class="step">Step 1 · softmax attention</p>
+    <div class="math disp" data-tex='o_t \;=\; \frac{\sum_{i\le t}\exp\!\big(q_t^{\top}k_i/\sqrt{d}\,\big)\,v_i}{\sum_{i\le t}\exp\!\big(q_t^{\top}k_i/\sqrt{d}\,\big)}'></div>
+    <p class="gl">exp couples q to every stored k<sub>i</sub> → keep all keys and values · O(n²)</p>
+    <p class="step">Step 2 · swap the kernel</p>
+    <div class="math disp" data-tex='\exp\!\big(q^{\top}k/\sqrt{d}\,\big)\;\;\longrightarrow\;\;\phi(q)^{\top}\phi(k),\qquad \phi(x)=\operatorname{ELU}(x)+1'></div>
+    <p class="gl">replace the kernel with one that factorizes — a <b>replacement</b>, not an approximation (a different model, retrained)</p>
+    <p class="step">Step 3 · regroup</p>
+    <div class="math disp" data-tex='o_t \;=\; \frac{\phi(q_t)^{\top}\Big(\sum_{i\le t}\phi(k_i)\,v_i^{\top}\Big)}{\phi(q_t)^{\top}\Big(\sum_{i\le t}\phi(k_i)\Big)} \;=\; \frac{\phi(q_t)^{\top}S_t}{\phi(q_t)^{\top}z_t}'></div>
+    <p class="gl">regroup: the query leaves both sums — the brackets no longer depend on q</p>
+    <p class="step">Step 4 · keep running sums</p>
+    <div class="math disp" data-tex='S_t = S_{t-1} + \phi(k_t)\,v_t^{\top}\in\mathbb{R}^{d\times d},\qquad z_t = z_{t-1}+\phi(k_t),\qquad \boxed{\;o_t = S_t^{\top}\phi(q_t)\;}'></div>
+    <p class="gl">running sums: constant-size state, one write + one read per token, O(n) total · S ∈ ℝ<sup>d×d</sup> = 64×64 per head · boxed = the unnormalized form used here</p>
+      <p class="figcap" style="margin-top:10px"><span class="acc"><b>the swap buys cost:</b></span> no growing KV cache, no per-token slowdown — a fixed 64×64 S and one write + one read per token. <b>the risk is quality</b> — that's what the experiments test</p>
+    <p class="small sub" style="text-align:center; margin-top:16px">o = attention output (previous slide) · q, k, v = query / key / value · d = key dim · <span data-tex='\phi(k)\,v^{\top}'></span> = outer product ("k ⊗ v") · S = the memory · z = the normalizer</p>
+  </div>
+</section>
+
+<!-- 3 · GATE + SWITCHES -->
+<section class="slide">
+  <h2>The state must forget — one gate, three design choices</h2>
+  <div style="max-width:1340px; margin:0 auto; width:100%">
+    <div class="math disp" style="font-size:27px" data-tex='S_t \;=\; \textcolor{#8a2332}{G_t}\odot S_{t-1} \;+\; \kappa_t\,u_t^{\top},\qquad o_t = S_t^{\top}\phi(q_t)'></div>
+    <p class="gl">G = decay gate (⊙ = entry-wise) · κ, u = the written key / value</p>
+    <div style="margin-top:30px; display:flex; gap:40px">
+      <div class="col">
+        <p><b>1 · Granularity</b></p>
+        <p class="sub" style="margin-top:6px">one scalar <span data-tex='\gamma'></span> per head,<br>or <span data-tex='\Gamma\in\mathbb{R}^{d}'></span> — a rate per row of S</p>
+        <div style="margin-top:16px; display:flex; align-items:center; gap:12px">
+          <div style="display:flex; flex-direction:column; gap:3px"><div style="display:flex; gap:3px; align-items:center"><div style="width:30px; text-align:right; font-size:12.5px; color:var(--accent); font-weight:600">γ<sub>1</sub></div><div style="width:20px; height:20px; border-radius:3px; background:#ececec"></div><div style="width:20px; height:20px; border-radius:3px; background:#ececec"></div><div style="width:20px; height:20px; border-radius:3px; background:#ececec"></div><div style="width:20px; height:20px; border-radius:3px; background:#ececec"></div><div style="width:20px; height:20px; border-radius:3px; background:#ececec"></div><div style="width:20px; height:20px; border-radius:3px; background:#ececec"></div><div style="width:20px; height:20px; border-radius:3px; background:#ececec"></div></div><div style="display:flex; gap:3px; align-items:center"><div style="width:30px; text-align:right; font-size:12.5px; color:var(--accent); font-weight:600">γ<sub>2</sub></div><div style="width:20px; height:20px; border-radius:3px; background:#d9d9d9"></div><div style="width:20px; height:20px; border-radius:3px; background:#d9d9d9"></div><div style="width:20px; height:20px; border-radius:3px; background:#d9d9d9"></div><div style="width:20px; height:20px; border-radius:3px; background:#d9d9d9"></div><div style="width:20px; height:20px; border-radius:3px; background:#d9d9d9"></div><div style="width:20px; height:20px; border-radius:3px; background:#d9d9d9"></div><div style="width:20px; height:20px; border-radius:3px; background:#d9d9d9"></div></div><div style="display:flex; gap:3px; align-items:center"><div style="width:30px; text-align:right; font-size:12.5px; color:var(--accent); font-weight:600">γ<sub>3</sub></div><div style="width:20px; height:20px; border-radius:3px; background:#c5c5c5"></div><div style="width:20px; height:20px; border-radius:3px; background:#c5c5c5"></div><div style="width:20px; height:20px; border-radius:3px; background:#c5c5c5"></div><div style="width:20px; height:20px; border-radius:3px; background:#c5c5c5"></div><div style="width:20px; height:20px; border-radius:3px; background:#c5c5c5"></div><div style="width:20px; height:20px; border-radius:3px; background:#c5c5c5"></div><div style="width:20px; height:20px; border-radius:3px; background:#c5c5c5"></div></div><div style="display:flex; gap:3px; align-items:center"><div style="width:30px; text-align:right; font-size:12.5px; color:var(--accent); font-weight:600">⋮</div><div style="width:160px; text-align:center; color:#aaa; font-size:12px; letter-spacing:6px">⋮⋮⋮⋮⋮</div></div><div style="display:flex; gap:3px; align-items:center"><div style="width:30px; text-align:right; font-size:12.5px; color:var(--accent); font-weight:600">γ<sub>64</sub></div><div style="width:20px; height:20px; border-radius:3px; background:#8e8e8e"></div><div style="width:20px; height:20px; border-radius:3px; background:#8e8e8e"></div><div style="width:20px; height:20px; border-radius:3px; background:#8e8e8e"></div><div style="width:20px; height:20px; border-radius:3px; background:#8e8e8e"></div><div style="width:20px; height:20px; border-radius:3px; background:#8e8e8e"></div><div style="width:20px; height:20px; border-radius:3px; background:#8e8e8e"></div><div style="width:20px; height:20px; border-radius:3px; background:#8e8e8e"></div></div></div>
+          <div class="s" style="font-size:12px; line-height:1.45">S · 64 × 64<br>one γ per <b>row</b><br>(= one channel)</div>
+        </div>
+        <p class="s" style="margin-top:10px; font-size:12px; color:var(--sub)">channel-wise: each row its own γ<sub>i</sub> · scalar: all γ<sub>i</sub> equal · static: fixed after training</p>
+      </div>
+      <div class="col">
+        <p><b>2 · Conditioning</b></p>
+        <p class="sub" style="margin-top:6px">data-dependent <span data-tex='G_t=\sigma(x_t W_g)'></span> — per token, 7,077,888 params @125M<br>
+        or static <span data-tex='\Gamma=\sigma(\ell)'></span> — fixed after training, 9,216 params</p>
+      </div>
+      <div class="col">
+        <p><b>3 · The write (delta rule)</b></p>
+        <p class="sub" style="margin-top:6px">blind: <span data-tex='\kappa_t=\phi(k_t),\;u_t=v_t'></span><br>delta: <span data-tex='\kappa_t=\hat{k}_t,\;u_t=v_t-S_{t-1}^{\top}\hat{k}_t'></span> — write only the <b>error</b></p>
+        <p class="s" style="font-size:12px;color:var(--sub);margin-top:8px;line-height:1.5">Widrow–Hoff 1960 · into linear attention: Schlag, Irie &amp; Schmidhuber 2021<br>corrects S at <b>write time</b>, every token — inference too, no gradients involved</p>
+      </div>
+    </div>
+    <div class="divider" style="margin-top:34px"></div>
+    <div class="math disp" style="font-size:26px" data-tex='\textbf{StaticChannelDelta:}\qquad S_t \;=\; \Gamma\odot S_{t-1} \;+\; \hat{k}_t\big(v_t - S_{t-1}^{\top}\hat{k}_t\big)^{\top}'></div>
+    <p class="gl">static per-channel decay, initialized on <span data-tex='\gamma_i=\exp\!\big(-2^{-8i/d}\big)'></span> (0.368 → 0.996), + corrective writes · <span data-tex='\hat{k}=k/\lVert k\rVert'></span></p>
+    <div style="margin-top:30px; text-align:center">
+      <p class="figcap" style="margin:0 0 6px"><b>mental model</b></p>
+      <p class="figcap" style="margin:3px 0">MLP weights: <b>remember</b> — a key-value store written by training, read-only at inference</p>
+      <p class="figcap" style="margin:3px 0">attention: <b>what to read from the past, and how</b> (in-context learning)</p>
+      <p class="figcap" style="margin:3px 0">S: a <b>key-value scratchpad</b> for the current inference — written token by token, rebuilt from zero each sequence</p>
+    </div>
+  </div>
+</section>
+
+<!-- 3b · INSIDE THE GATE -->
+<section class="slide">
+  <h2>Inside the data-dependent gate — <span data-tex='G_t = \sigma(x_t W_g)' class="h2tex"></span></h2>
+  <div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:30px">
+    <div class="flow" style="gap:13px">
+      <div class="pbox"><div class="t">x<sub>t</sub></div><div class="s">the token's vector<br>768 numbers @125M</div></div>
+      <div class="farr" style="text-align:center">× W<sub>g</sub> →<div class="s" style="font-size:11.5px">768 × 64 · learned</div></div>
+      <div class="pbox"><div class="t">64 raw scores</div><div class="s">one dot product per column<br>any real number</div></div>
+      <div class="farr" style="text-align:center">σ →<div class="s" style="font-size:11.5px">the sigmoid · squash into (0,1)</div></div>
+      <div class="pbox" style="border:2.5px solid var(--accent)"><div class="t" style="color:var(--accent)">G<sub>t</sub> · 64 keep-fractions</div><div class="s">≈ 1 keep this row · ≈ 0 wipe it</div></div>
+      <div class="farr" style="text-align:center">⊙ →<div class="s" style="font-size:11.5px">row-wise</div></div>
+      <div class="pbox"><div class="t">S · 64 × 64</div><div class="s">row i scaled by G<sub>t</sub>[i]<br>rebuilt every token</div></div>
+    </div>
+    <div class="flow" style="gap:26px; align-items:stretch">
+      <div class="pbox" style="flex:1; max-width:430px; text-align:left"><div class="t" style="font-size:15px">each <b>column</b> of W<sub>g</sub> = one learned question</div><div class="s" style="margin-top:6px; line-height:1.5">"does this context still need its long-range facts?" — x<sub>t</sub> · column<sub>i</sub> measures how strongly the token matches question i. 64 columns, 64 answers, asked all at once by one matmul.</div></div>
+      <div class="pbox" style="padding:12px 18px">
+        <svg width="250" height="118" viewBox="0 0 250 118">
+          <line x1="20" y1="100" x2="238" y2="100" stroke="#bbb" stroke-width="1.5"/>
+          <line x1="129" y1="8" x2="129" y2="112" stroke="#ddd" stroke-width="1" stroke-dasharray="3 3"/>
+          <line x1="20" y1="16" x2="238" y2="16" stroke="#ddd" stroke-width="1" stroke-dasharray="3 3"/>
+          <path d="M 22 98 C 80 96, 105 88, 129 58 C 153 28, 178 20, 236 18" fill="none" stroke="#8a2332" stroke-width="3"/>
+          <text x="10" y="104" font-size="11" fill="#777">0</text>
+          <text x="10" y="21" font-size="11" fill="#777">1</text>
+          <text x="196" y="112" font-size="11" fill="#777">score</text>
+        </svg>
+        <div class="s" style="font-size:12px; text-align:center">σ = the <b>sigmoid</b> (logistic function) · any score → a fraction</div>
+      </div>
+      <div class="pbox" style="flex:1; max-width:430px; text-align:left"><div class="t" style="font-size:15px">why squash at all?</div><div class="s" style="margin-top:6px; line-height:1.5">a decay rate must be a <b>fraction</b>: ×1.3 explodes the memory, ×(−0.5) flips its sign. σ bends the whole real line into (0,1), so every dial is a valid "how much to keep".</div></div>
+    </div>
+    <p class="gl" style="text-align:center; font-size:15.5px">the <b>wiring</b> is what costs parameters: 768·64 = 49,152 per head × 12 heads × 12 layers = <b>7,077,888</b> &nbsp;·&nbsp; the static twin deletes W<sub>g</sub> and keeps only the 64 dials: 64 × 12 × 12 = <b>9,216</b></p>
+  </div>
+</section>
+
+<!-- 4 · DESIGN SPACE (Fig 1) -->
+<section class="slide">
+  <h2>The 2×2×2 design space</h2>
+  <div class="cols">
+    <div class="col" style="flex:1.35">
+      <div class="figwrap"><img src="talk_figs/design_cube_fact.png" style="max-height:620px"></div>
+    </div>
+    <div class="col" style="padding-top:60px">
+      <ul>
+        <li>existing, data-dependent: ScalarDynamic (GLA), ScalarDynamicDelta (DeltaNet), DynamicChannelDelta (KDA); DynamicChannel (RWKV) left hollow</li>
+        <li>new: the four <b>Static</b> variants — the data-independent half, crossed with the delta rule</li>
+        <li>softmax: outside the cube, as baseline</li>
+      </ul>
+      <p class="small sub" style="margin-top:20px">Figure 1</p>
+    </div>
+  </div>
+</section>
+
+<!-- 5 · SETUP -->
+<section class="slide">
+  <h2>Controlled, fixed-budget protocol</h2>
+  <div style="flex:1; display:flex; flex-direction:column; justify-content:center; max-width:1100px; margin:0 auto; width:100%">
+    <ul style="font-size:21px">
+      <li>GPT-style decoder; only the attention sublayer changes</li>
+      <li>18M (6L·4H·d256) and 125M (12L·12H·d768): all 8 variants × 2 corpora × seeds 42/123/7 &nbsp;<span class="sub small">(42M: single-seed check, 5 variants)</span></li>
+      <li>TinyStories + WikiText-103 · 10M tokens · seq 512 · AdamW, identical hyperparameters</li>
+      <li>metric: validation cross-entropy (nats) · all individual seeds reported</li>
+    </ul>
+    <div class="divider"></div>
+    <p class="sub" style="font-size:18px">scope: fixed-budget comparisons, uniformly simplified delta variants, naive PyTorch loops (softmax 20 ms/step vs SCD 1,762 ms) — interaction structure, not SOTA</p>
+  </div>
+</section>
+
+<!-- 6 · RANKS (Fig 2) -->
+<section class="slide">
+  <h2>Finding 1 — the same top 4, in every seed × dataset</h2>
+  <div style="flex:1; display:flex; align-items:center; justify-content:center; min-height:0">
+    <div class="figwrap">
+      <img src="talk_figs/multiseed_ranks_fact.png" style="max-height:600px">
+      <p class="figcap">Figure 2 · ranks 1–4 are always the four delta-rule variants; no blind writer ever enters the top 4</p>
+    </div>
+  </div>
+</section>
+
+<!-- 7 · LOSS BARS (Fig 3) -->
+<section class="slide">
+  <h2>The delta divide</h2>
+  <div class="cols">
+    <div class="col" style="flex:1.6; display:flex; align-items:center; justify-content:center">
+      <div class="figwrap">
+        <img src="talk_figs/multiseed_bars_fact.png" style="max-height:580px">
+        <p class="figcap">Figure 3 · mean ± std over 3 seeds; dots = individual seeds</p>
+      </div>
+    </div>
+    <div class="col" style="padding-top:70px">
+      <p>worst delta vs best non-delta:</p>
+      <table style="margin:16px 0">
+        <tr><th>setting</th><th>gap (nats)</th></tr>
+        <tr><td>18M · TinyStories</td><td class="mono">0.061</td></tr>
+        <tr><td>125M · TinyStories</td><td class="mono">0.057</td></tr>
+        <tr><td>125M · WikiText-103</td><td class="mono">0.072</td></tr>
+      </table>
+      <p class="sub">vs softmax at 125M/WT: <span class="mono">0.217</span></p>
+    </div>
+  </div>
+</section>
+
+<!-- 8 · INTERACTION -->
+<section class="slide">
+  <h2>Finding 2 — channel-wise decay helps only with the delta rule</h2>
+  <div style="flex:1; display:flex; align-items:center; justify-content:center; gap:90px">
+    <div>
+      <p style="text-align:center; margin-bottom:12px"><b>TinyStories</b> · 18M</p>
+      <table>
+        <tr><th></th><th>scalar</th><th>channel</th><th>Δ</th></tr>
+        <tr><td>blind</td><td class="mono">2.4307</td><td class="mono">2.5491</td><td class="mono acc">+0.118</td></tr>
+        <tr><td>delta</td><td class="mono">2.3015</td><td class="mono">2.2591</td><td class="mono" style="color:#1c7a3d">−0.042</td></tr>
+      </table>
+      <p class="sub small" style="text-align:center; margin-top:10px">interaction +0.161 ≈ 77% of the delta effect</p>
+    </div>
+    <div>
+      <p style="text-align:center; margin-bottom:12px"><b>WikiText-103</b> · 18M</p>
+      <table>
+        <tr><th></th><th>scalar</th><th>channel</th><th>Δ</th></tr>
+        <tr><td>blind</td><td class="mono">5.0884</td><td class="mono">5.1505</td><td class="mono acc">+0.062</td></tr>
+        <tr><td>delta</td><td class="mono">4.9704</td><td class="mono">4.9207</td><td class="mono" style="color:#1c7a3d">−0.050</td></tr>
+      </table>
+      <p class="sub small" style="text-align:center; margin-top:10px">interaction +0.112 · sign-consistent in every seed</p>
+    </div>
+  </div>
+  <p class="sub" style="text-align:center">many timescales accumulate interference — unless the write corrects it</p>
+</section>
+
+<!-- 9 · TRAINED GATES (Figs 5 & 7) -->
+<section class="slide">
+  <h2>Finding 3 — the winner's gates are static (and you can see it)</h2>
+  <div class="cols" style="align-items:center">
+    <div class="col">
+      <div class="figwrap">
+        <img src="talk_figs/static_channel_delta_channel_gates.png" style="max-height:430px">
+        <p class="figcap">Figure 5 · StaticChannelDelta — smooth bands, the init spectrum largely preserved</p>
+      </div>
+    </div>
+    <div class="col">
+      <div class="figwrap">
+        <img src="talk_figs/kda_channel_gates_fact.png" style="max-height:430px">
+        <p class="figcap">Figure 7 · DynamicChannelDelta (KDA) — gates recomputed every token</p>
+      </div>
+    </div>
+  </div>
+  <p class="sub" style="text-align:center">18M, both corpora: StaticChannelDelta 2.2591 / 4.9207 beats DynamicChannelDelta (KDA) 2.2820 / 4.9353 — 9,216 fixed dials vs a ~7M-param gate network</p>
+</section>
+
+<!-- 10 · CURVES + LENGTH (Figs 4 & 6) -->
+<section class="slide">
+  <h2>The divide is early — and the recurrence is stable</h2>
+  <div class="cols" style="align-items:center">
+    <div class="col">
+      <div class="figwrap">
+        <img src="talk_figs/val_loss_curves.png" style="max-height:440px">
+        <p class="figcap">Figure 4 · delta / non-delta separation visible from the first validation checkpoint</p>
+      </div>
+    </div>
+    <div class="col">
+      <div class="figwrap">
+        <img src="talk_figs/length_generalization.png" style="max-height:440px">
+        <p class="figcap">Figure 6 · NoPE, trained at 2K: linear variants flat to 8K, softmax degrades &nbsp;<span class="acc">(stability check — not long-range retrieval)</span></p>
+        <p class="figcap" style="margin-top:18px;color:#8a8f98">legend decoder: ScalarDynamic = GLA &nbsp;·&nbsp; ScalarDynamicDelta = DeltaNet &nbsp;·&nbsp; DynamicChannelDelta = KDA &nbsp;·&nbsp; Standard = softmax</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 11 · TAKEAWAYS -->
+<section class="slide">
+  <h2>Takeaways</h2>
+  <div style="flex:1; display:flex; flex-direction:column; justify-content:center; max-width:1150px; margin:0 auto; width:100%">
+    <ul style="font-size:24px; line-height:1.5">
+      <li style="margin-bottom:26px"><b>Correct, don't accumulate.</b> The delta rule is the strongest observed factor — top 4 in every cell, at every tested scale.</li>
+      <li style="margin-bottom:26px"><b>Many timescales need the eraser.</b> Channel-wise decay helps only with corrective writes (18M, both corpora; within-delta it persists at 125M on WikiText-103).</li>
+      <li style="margin-bottom:26px"><b>Forgetting needn't watch the text.</b> 9,216 static dials matched a ~7M-parameter data-dependent gate, at these scales.</li>
+    </ul>
+    <div class="divider"></div>
+    <p class="sub">limits: ≤125M, 3 seeds, fixed budget, no retrieval benchmarks · code: pure PyTorch, every seed reported</p>
+  </div>
+</section>
+
+<!-- 12 · FUTURE WORK -->
+<section class="slide">
+  <h2>Future work</h2>
+  <div style="flex:1; display:flex; flex-direction:column; justify-content:center; max-width:1150px; margin:0 auto; width:100%">
+    <ul style="font-size:23px; line-height:1.5">
+      <li style="margin-bottom:24px"><b>Scale.</b> Rerun the cube at 500M–1B: do the delta divide and the static parity hold?</li>
+      <li style="margin-bottom:24px"><b>Retrieval.</b> Long-range recall (needle-in-a-haystack) — the length results here are stability checks only.</li>
+      <li style="margin-bottom:24px"><b>Speed.</b> Chunkwise kernels for the static gate (the decay blocks precompute) — close the wall-clock gap.</li>
+      <li style="margin-bottom:24px"><b>Theory.</b> A formal account of the interference story behind Finding 2.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 13 · THANK YOU -->
+<section class="slide">
+  <div style="flex:1; display:flex; flex-direction:column; justify-content:center; max-width:1150px; margin:0 auto; width:100%">
+    <p style="font-size:54px; font-weight:700; margin:0">Thank you</p>
+    <p style="font-size:30px; margin:18px 0 0" class="acc"><b>questions?</b></p>
+    <div class="divider" style="margin-top:34px"></div>
+    <p class="sub" style="margin-top:18px">paper: openreview.net/forum?id=FdXB4u27LD · code: pure PyTorch, every seed reported</p>
+  </div>
+</section>
+
+<!-- 14 · BACKUP · SLOW VS FAST -->
+<section class="slide">
+  <h2><span style="color:var(--sub); font-weight:600">Backup ·</span> Slow memory, fast memory — and what softmax was buying</h2>
+  <div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:30px">
+    <div class="flow" style="gap:26px; align-items:stretch">
+      <div class="pbox" style="flex:1; max-width:700px; text-align:left">
+        <div class="t" style="font-size:16px">two slow-vs-fast axes — don't mix them</div>
+        <div class="s" style="margin-top:9px; line-height:1.6"><b>1 · when is it written?</b> MLP weights = <b>slow memory</b>: written by training, frozen at inference. S = <b>fast memory</b>: written token by token by the current context, wiped after the sequence.</div>
+        <div class="s" style="margin-top:9px; line-height:1.6"><b>2 · how fast is it forgotten?</b> inside S, channel-wise decay gives every row its own speed: γ = 0.368 forgets within a token · γ = 0.996 remembers ≈ 163 tokens — one state, a whole spectrum of timescales.</div>
+      </div>
+      <div class="pbox" style="flex:1; max-width:700px; text-align:left">
+        <div class="t" style="font-size:16px">what softmax was buying</div>
+        <div class="s" style="margin-top:9px; line-height:1.6">softmax = a <b>soft argmax</b>: scores → positive weights that sum to 1, keys <b>compete</b>, the best match wins sharply → near-exact retrieval.</div>
+        <div class="s" style="margin-top:9px; line-height:1.6">the price: exp ties q to every stored k → keep the whole KV cache. drop it → everything factorizes into S at constant cost, but matching becomes <b>linear and blurry</b> — similar keys interfere.</div>
+      </div>
+    </div>
+    <p class="gl" style="text-align:center; font-size:15.5px">the trade: a constant-size S gives up sharp retrieval — <b>corrective (delta) writes win some of it back</b> when keys collide</p>
+  </div>
+</section>
+
+
+</div>
+
+<div class="navbtns"><button id="prev">‹</button><button id="next">›</button></div>
+<div class="footer">
+  <span>Delta-Rule Writes in Linear Attention · TMLR 09/2026</span>
+  <span id="counter"></span>
+</div>
+
+<script>
+"use strict";
+const slides=[...document.querySelectorAll('.slide')];
+const counter=document.getElementById('counter');
+let cur=0;
+function go(n){
+  cur=Math.max(0,Math.min(slides.length-1,n));
+  slides.forEach((s,i)=>s.classList.toggle('on',i===cur));
+  counter.textContent=(cur+1)+' / '+slides.length;
+  history.replaceState(null,'','#'+(cur+1));
+}
+document.addEventListener('keydown',e=>{
+  if(['ArrowRight',' ','PageDown'].includes(e.key)){e.preventDefault();go(cur+1);}
+  else if(['ArrowLeft','PageUp'].includes(e.key)){e.preventDefault();go(cur-1);}
+  else if(e.key==='Home')go(0); else if(e.key==='End')go(slides.length-1);
+});
+document.getElementById('next').onclick=()=>go(cur+1);
+document.getElementById('prev').onclick=()=>go(cur-1);
+slides.forEach((sl,i)=>{const d=document.createElement('div');d.className='pagenum';d.textContent=(i+1)+' / '+slides.length;sl.appendChild(d);});
+document.querySelectorAll('[data-tex]').forEach(el=>{
+  katex.render(el.getAttribute('data-tex'), el, {displayMode: el.classList.contains('disp'), throwOnError:false});
+});
+const h=parseInt((location.hash||'#1').slice(1),10);
+go(isNaN(h)?0:h-1);
+</script>
+</body>
+</html>

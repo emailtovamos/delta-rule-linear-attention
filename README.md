@@ -1,5 +1,7 @@
 # Delta-Rule Writes in Linear Attention: A Controlled Factorial Study of Decay Design
 
+**Talk slides:** https://emailtovamos.github.io/delta-rule-linear-attention/ (browser deck; arrow keys to navigate)
+
 Code, scripts, and training logs for the TMLR paper of the same name ([OpenReview](https://openreview.net/forum?id=FdXB4u27LD)). A controlled fixed-budget study of decay mechanisms in linear attention.
 
 ## Research Question
