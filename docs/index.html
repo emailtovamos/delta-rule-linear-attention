@@ -15,7 +15,8 @@
   .slide.on{display:flex}
   h1{font-size:44px; font-weight:700; line-height:1.18}
   h2{font-size:33px; font-weight:700; padding-bottom:12px; border-bottom:2px solid var(--rule); margin-bottom:26px}
-  p,li{font-size:20px; line-height:1.5}
+  p{font-size:20px; line-height:1.5}
+  ul{font-size:20px; line-height:1.5} li{font-size:inherit; line-height:inherit}
   .sub{color:var(--sub)} .acc{color:var(--accent)} .small{font-size:15.5px}
   .eq{font-family:"SF Mono",ui-monospace,Menlo,monospace; font-size:23px; text-align:center; margin:14px 0 4px; letter-spacing:-0.2px}
   .gl{font-size:15px; color:var(--sub); text-align:center; margin-bottom:10px}
@@ -25,7 +26,7 @@
   .figwrap img{max-width:100%; object-fit:contain}
   .figcap{font-size:15px; color:var(--sub); margin-top:8px; text-align:center}
   .big .gl{font-size:21px} .big .figcap{font-size:21px} .big .small{font-size:21.5px}
-  ul{list-style:none} ul li{padding-left:20px; position:relative; margin-bottom:12px}
+  ul{list-style:none} ul li{padding-left:1em; position:relative; margin-bottom:12px}
   ul li::before{content:"–"; position:absolute; left:0; color:var(--accent); font-weight:700}
   table{border-collapse:collapse; margin:0 auto}
   th,td{padding:6px 16px; font-size:18px; text-align:center; border-bottom:1px solid var(--rule)}
@@ -218,7 +219,7 @@
       <div class="figwrap"><img src="talk_figs/design_cube_fact.png" style="max-height:620px"></div>
     </div>
     <div class="col" style="padding-top:60px">
-      <ul>
+      <ul style="font-size:26px">
         <li>existing, data-dependent: ScalarDynamic (GLA), ScalarDynamicDelta (DeltaNet), DynamicChannelDelta (KDA); DynamicChannel (RWKV) left hollow</li>
         <li>new: the four <b>Static</b> variants — the data-independent half, crossed with the delta rule</li>
         <li>softmax: outside the cube, as baseline</li>
@@ -231,7 +232,7 @@
 <!-- 5 · SETUP -->
 <section class="slide big">
   <h2>Controlled, fixed-budget protocol</h2>
-  <div style="flex:1; display:flex; flex-direction:column; justify-content:center; max-width:1100px; margin:0 auto; width:100%">
+  <div style="flex:1; display:flex; flex-direction:column; justify-content:center; max-width:1360px; margin:0 auto; width:100%">
     <ul style="font-size:44px; line-height:1.45">
       <li>GPT-style decoder; only the attention sublayer changes</li>
       <li>18M (6L·4H·d256) and 125M (12L·12H·d768): all 8 variants × 2 corpora × seeds 42/123/7 &nbsp;<span class="sub" style="font-size:27px">(42M: single-seed check, 5 variants)</span></li>
@@ -342,7 +343,7 @@
 <!-- 11 · TAKEAWAYS -->
 <section class="slide big">
   <h2>Takeaways</h2>
-  <div style="flex:1; display:flex; flex-direction:column; justify-content:center; max-width:1150px; margin:0 auto; width:100%">
+  <div style="flex:1; display:flex; flex-direction:column; justify-content:center; max-width:1360px; margin:0 auto; width:100%">
     <ul style="font-size:45px; line-height:1.45">
       <li style="margin-bottom:26px"><b>Correct, don't accumulate.</b> The delta rule is the strongest observed factor — top 4 in every cell, at every tested scale.</li>
       <li style="margin-bottom:26px"><b>Many timescales need the eraser.</b> Channel-wise decay helps only with corrective writes (18M, both corpora; within-delta it persists at 125M on WikiText-103).</li>
@@ -356,12 +357,12 @@
 <!-- 12 · FUTURE WORK -->
 <section class="slide big">
   <h2>Future work</h2>
-  <div style="flex:1; display:flex; flex-direction:column; justify-content:center; max-width:1150px; margin:0 auto; width:100%">
+  <div style="flex:1; display:flex; flex-direction:column; justify-content:center; max-width:1360px; margin:0 auto; width:100%">
     <ul style="font-size:44px; line-height:1.45">
       <li style="margin-bottom:24px"><b>Scale.</b> Rerun the cube at 500M–1B: do the delta divide and the static parity hold?</li>
       <li style="margin-bottom:24px"><b>Retrieval.</b> Long-range recall (needle-in-a-haystack) — the length results here are stability checks only.</li>
       <li style="margin-bottom:24px"><b>Speed.</b> Chunkwise kernels for the static gate (the decay blocks precompute) — close the wall-clock gap.</li>
-      <li style="margin-bottom:24px"><b>Theory.</b> A formal account of the interference story behind Finding 2.</li>
+      <li style="margin-bottom:24px"><b>Theory.</b> A formal account of the interference story behind Finding&nbsp;2.</li>
     </ul>
   </div>
 </section>
