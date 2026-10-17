@@ -29,6 +29,7 @@
   ul li::before{content:"–"; position:absolute; left:0; color:var(--accent); font-weight:700}
   table{border-collapse:collapse; margin:0 auto}
   th,td{padding:6px 16px; font-size:18px; text-align:center; border-bottom:1px solid var(--rule)}
+  .bigtable th,.bigtable td{font-size:28px; padding:11px 28px}
   th{font-size:13px; letter-spacing:1px; text-transform:uppercase; color:var(--sub)}
   .footer{position:fixed; left:0; right:0; bottom:0; display:flex; justify-content:space-between;
           padding:10px 24px; font-size:12px; color:#999; pointer-events:none}
@@ -231,9 +232,9 @@
 <section class="slide big">
   <h2>Controlled, fixed-budget protocol</h2>
   <div style="flex:1; display:flex; flex-direction:column; justify-content:center; max-width:1100px; margin:0 auto; width:100%">
-    <ul style="font-size:29px">
+    <ul style="font-size:44px; line-height:1.45">
       <li>GPT-style decoder; only the attention sublayer changes</li>
-      <li>18M (6L·4H·d256) and 125M (12L·12H·d768): all 8 variants × 2 corpora × seeds 42/123/7 &nbsp;<span class="sub small">(42M: single-seed check, 5 variants)</span></li>
+      <li>18M (6L·4H·d256) and 125M (12L·12H·d768): all 8 variants × 2 corpora × seeds 42/123/7 &nbsp;<span class="sub" style="font-size:27px">(42M: single-seed check, 5 variants)</span></li>
       <li>TinyStories + WikiText-103 · 10M tokens · seq 512 · AdamW, identical hyperparameters</li>
       <li>metric: validation cross-entropy (nats) · all individual seeds reported</li>
     </ul>
@@ -256,22 +257,22 @@
 <!-- 7 · LOSS BARS (Fig 3) -->
 <section class="slide big">
   <h2>The delta divide</h2>
-  <div class="cols">
-    <div class="col" style="flex:1.6; display:flex; align-items:center; justify-content:center">
-      <div class="figwrap">
-        <img src="talk_figs/multiseed_bars_fact.png" style="max-height:580px">
-        <p class="figcap">Figure 3 · mean ± std over 3 seeds; dots = individual seeds</p>
-      </div>
+  <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px">
+    <div class="figwrap">
+      <img src="talk_figs/multiseed_bars_fact.png" style="max-height:400px">
+      <p class="figcap">Figure 3 · mean ± std over 3 seeds; dots = individual seeds</p>
     </div>
-    <div class="col" style="padding-top:70px">
-      <p>worst delta vs best non-delta:</p>
-      <table style="margin:16px 0">
-        <tr><th>setting</th><th>gap (nats)</th></tr>
-        <tr><td>18M · TinyStories</td><td class="mono">0.061</td></tr>
-        <tr><td>125M · TinyStories</td><td class="mono">0.057</td></tr>
-        <tr><td>125M · WikiText-103</td><td class="mono">0.072</td></tr>
-      </table>
-      <p class="sub">vs softmax at 125M/WT: <span class="mono">0.217</span></p>
+    <div style="display:flex; align-items:center; gap:80px">
+      <div>
+        <p style="font-size:30px">worst delta vs best non-delta:</p>
+        <table class="bigtable" style="margin:12px 0 0">
+          <tr><th>setting</th><th>gap (nats)</th></tr>
+          <tr><td>18M · TinyStories</td><td class="mono">0.061</td></tr>
+          <tr><td>125M · TinyStories</td><td class="mono">0.057</td></tr>
+          <tr><td>125M · WikiText-103</td><td class="mono">0.072</td></tr>
+        </table>
+      </div>
+      <p class="sub" style="font-size:30px; text-align:center">vs softmax at 125M/WT:<br><span class="mono" style="font-size:44px">0.217</span></p>
     </div>
   </div>
 </section>
@@ -281,45 +282,41 @@
   <h2>Finding 2 — channel-wise decay helps only with the delta rule</h2>
   <div style="flex:1; display:flex; align-items:center; justify-content:center; gap:90px">
     <div>
-      <p style="text-align:center; margin-bottom:12px"><b>TinyStories</b> · 18M</p>
-      <table>
+      <p style="text-align:center; margin-bottom:14px; font-size:33px"><b>TinyStories</b> · 18M</p>
+      <table class="bigtable">
         <tr><th></th><th>scalar</th><th>channel</th><th>Δ</th></tr>
         <tr><td>blind</td><td class="mono">2.4307</td><td class="mono">2.5491</td><td class="mono acc">+0.118</td></tr>
         <tr><td>delta</td><td class="mono">2.3015</td><td class="mono">2.2591</td><td class="mono" style="color:#1c7a3d">−0.042</td></tr>
       </table>
-      <p class="sub small" style="text-align:center; margin-top:10px">interaction +0.161 ≈ 77% of the delta effect</p>
+      <p class="sub" style="text-align:center; margin-top:14px; font-size:30px">interaction +0.161 ≈ 77% of the delta effect</p>
     </div>
     <div>
-      <p style="text-align:center; margin-bottom:12px"><b>WikiText-103</b> · 18M</p>
-      <table>
+      <p style="text-align:center; margin-bottom:14px; font-size:33px"><b>WikiText-103</b> · 18M</p>
+      <table class="bigtable">
         <tr><th></th><th>scalar</th><th>channel</th><th>Δ</th></tr>
         <tr><td>blind</td><td class="mono">5.0884</td><td class="mono">5.1505</td><td class="mono acc">+0.062</td></tr>
         <tr><td>delta</td><td class="mono">4.9704</td><td class="mono">4.9207</td><td class="mono" style="color:#1c7a3d">−0.050</td></tr>
       </table>
-      <p class="sub small" style="text-align:center; margin-top:10px">interaction +0.112 · sign-consistent in every seed</p>
+      <p class="sub" style="text-align:center; margin-top:14px; font-size:30px">interaction +0.112 · sign-consistent in every seed</p>
     </div>
   </div>
-  <p class="sub" style="text-align:center">many timescales accumulate interference — unless the write corrects it</p>
+  <p class="sub" style="text-align:center; font-size:30px">many timescales accumulate interference — unless the write corrects it</p>
 </section>
 
 <!-- 9 · TRAINED GATES (Figs 5 & 7) -->
 <section class="slide big">
   <h2>Finding 3 — the winner's gates are static (and you can see it)</h2>
-  <div class="cols" style="align-items:center">
-    <div class="col">
-      <div class="figwrap">
-        <img src="talk_figs/static_channel_delta_channel_gates.png" style="max-height:430px">
-        <p class="figcap">Figure 5 · StaticChannelDelta — smooth bands, the init spectrum largely preserved</p>
-      </div>
+  <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px">
+    <div class="figwrap">
+      <img src="talk_figs/static_channel_delta_channel_gates.png" style="width:1240px">
+      <p class="figcap">Figure 5 · StaticChannelDelta — smooth bands, the init spectrum largely preserved</p>
     </div>
-    <div class="col">
-      <div class="figwrap">
-        <img src="talk_figs/kda_channel_gates_fact.png" style="max-height:430px">
-        <p class="figcap">Figure 7 · DynamicChannelDelta (KDA) — gates recomputed every token</p>
-      </div>
+    <div class="figwrap">
+      <img src="talk_figs/kda_channel_gates_fact.png" style="width:1240px">
+      <p class="figcap">Figure 7 · DynamicChannelDelta (KDA) — gates recomputed every token</p>
     </div>
   </div>
-  <p class="sub" style="text-align:center">18M, both corpora: StaticChannelDelta 2.2591 / 4.9207 beats DynamicChannelDelta (KDA) 2.2820 / 4.9353 — 9,216 fixed dials vs a ~7M-param gate network</p>
+  <p class="sub" style="text-align:center; font-size:26px">18M, both corpora: StaticChannelDelta 2.2591 / 4.9207 beats DynamicChannelDelta (KDA) 2.2820 / 4.9353 — 9,216 fixed dials vs a ~7M-param gate network</p>
 </section>
 
 <!-- 10 · CURVES + LENGTH (Figs 4 & 6) -->
@@ -346,7 +343,7 @@
 <section class="slide big">
   <h2>Takeaways</h2>
   <div style="flex:1; display:flex; flex-direction:column; justify-content:center; max-width:1150px; margin:0 auto; width:100%">
-    <ul style="font-size:32px; line-height:1.5">
+    <ul style="font-size:45px; line-height:1.45">
       <li style="margin-bottom:26px"><b>Correct, don't accumulate.</b> The delta rule is the strongest observed factor — top 4 in every cell, at every tested scale.</li>
       <li style="margin-bottom:26px"><b>Many timescales need the eraser.</b> Channel-wise decay helps only with corrective writes (18M, both corpora; within-delta it persists at 125M on WikiText-103).</li>
       <li style="margin-bottom:26px"><b>Forgetting needn't watch the text.</b> 9,216 static dials matched a ~7M-parameter data-dependent gate, at these scales.</li>
@@ -360,7 +357,7 @@
 <section class="slide big">
   <h2>Future work</h2>
   <div style="flex:1; display:flex; flex-direction:column; justify-content:center; max-width:1150px; margin:0 auto; width:100%">
-    <ul style="font-size:31px; line-height:1.5">
+    <ul style="font-size:44px; line-height:1.45">
       <li style="margin-bottom:24px"><b>Scale.</b> Rerun the cube at 500M–1B: do the delta divide and the static parity hold?</li>
       <li style="margin-bottom:24px"><b>Retrieval.</b> Long-range recall (needle-in-a-haystack) — the length results here are stability checks only.</li>
       <li style="margin-bottom:24px"><b>Speed.</b> Chunkwise kernels for the static gate (the decay blocks precompute) — close the wall-clock gap.</li>
