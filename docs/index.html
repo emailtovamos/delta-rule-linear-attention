@@ -51,6 +51,10 @@
   .step{font-size:13.5px; letter-spacing:2px; text-transform:uppercase; color:var(--accent); font-weight:700; text-align:left; margin-top:2px}
   .math.disp .katex-display{margin:6px 0}
   .gl{margin-bottom:8px !important}
+  .costtable{table-layout:fixed; width:1390px}
+  .costtable th,.costtable td{font-size:22px; padding:13px 22px; text-align:left; border-bottom:1px solid var(--rule); line-height:1.4}
+  .costtable th{font-size:20px; letter-spacing:0.5px; color:var(--ink); text-transform:none}
+  .costtable .rlab{font-weight:700}
   /* pipeline slide */
   .flow{display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:nowrap}
   .pbox{border:1.5px solid #bbb; border-radius:8px; padding:12px 14px; text-align:center; background:#fff}
@@ -395,6 +399,40 @@
       </div>
     </div>
     <p class="gl" style="text-align:center; font-size:23.5px">the trade: a constant-size S gives up sharp retrieval — <b>corrective (delta) writes win some of it back</b> when keys collide</p>
+  </div>
+</section>
+
+<!-- 15 · BACKUP · COST TABLE -->
+<section class="slide big">
+  <h2><span style="color:var(--sub); font-weight:600">Backup ·</span> What each side costs — training vs inference</h2>
+  <div style="flex:1; display:flex; flex-direction:column; justify-content:center">
+    <p class="sub" style="text-align:center; font-size:22px; margin-bottom:16px">n = sequence length · d = head dimension (64 here) · the state S is d×d, per head</p>
+    <table class="costtable" style="margin:0 auto">
+      <colgroup><col style="width:280px"><col style="width:555px"><col style="width:555px"></colgroup>
+      <tr><th></th><th>softmax attention</th><th>linear attention</th></tr>
+      <tr>
+        <td class="rlab">training · compute</td>
+        <td>O(n²·d) — quadratic in n: the QKᵀ matrix</td>
+        <td>O(n·d²) recurrent — linear in n but sequential · chunkwise kernels keep it linear AND parallel</td>
+      </tr>
+      <tr>
+        <td class="rlab">training · memory</td>
+        <td>O(n²) attention matrix — FlashAttention cuts it to O(n), but compute stays quadratic</td>
+        <td>O(d²) state — no n² matrix at all</td>
+      </tr>
+      <tr>
+        <td class="rlab">inference · compute/token</td>
+        <td>O(n·d) — attend to every cached key: grows with context</td>
+        <td><b>O(d²) — constant, whatever the context</b></td>
+      </tr>
+      <tr>
+        <td class="rlab">inference · memory</td>
+        <td>O(n·d) KV cache — grows token by token</td>
+        <td><b>O(d²) state — never grows</b></td>
+      </tr>
+    </table>
+    <p class="sub" style="text-align:center; font-size:26px; margin-top:28px">softmax: cost scales with how much you've seen · linear: cost is fixed no matter how much you've seen</p>
+    <p style="text-align:center; font-size:26px; margin-top:8px"><b>— paid for by compressing all history into one lossy d×d state</b></p>
   </div>
 </section>
 
